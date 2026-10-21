@@ -1,35 +1,48 @@
-import os, threading
+import os, threading, asyncio
 from flask import Flask
-from telegram import Update
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
-
-TOKEN = os.getenv("BOT_TOKEN")
-CH = os.getenv("CHANNEL_USERNAME")
-print(f"DEBUG TOKEN exists: {bool(TOKEN)}, CH: {CH}")
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, MessageHandler, ContextTypes, filters
 
 app = Flask(__name__)
-@app.route('/')
+TOKEN = os.environ.get("BOT_TOKEN")
+CH = "@MIM9614"  # তোমার চ্যানেল
+CHANNEL_LINK = "https://t.me/MIM9614"
+
 def home():
     return "Bot is Live!"
 
 async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or update.message.from_user.is_bot:
         return
+    
     uid = update.effective_user.id
+    
+    # Admin হলে কিছু করবে না
     try:
         m = await context.bot.get_chat_member(update.effective_chat.id, uid)
-        if m.status in ['administrator','creator']:
+        if m.status in ['administrator', 'creator']:
             return
     except: pass
+
+    # চ্যানেলে জয়েন আছে কিনা চেক
     try:
         cm = await context.bot.get_chat_member(CH, uid)
-        if cm.status in ['member','administrator','creator']:
+        if cm.status in ['member', 'administrator', 'creator']:
             return
     except: pass
+
+    # জয়েন না থাকলে ডিলিট + ওয়ার্নিং
     try:
         await context.bot.delete_message(update.effective_chat.id, update.message.message_id)
-        w = await context.bot.send_message(update.effective_chat.id, f"⚠️ Join {CH} first!")
-        import asyncio
+        
+        keyboard = [[InlineKeyboardButton("✅ Join Channel", url=CHANNEL_LINK)]]
+        markup = InlineKeyboardMarkup(keyboard)
+
+        w = await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"⚠️ গ্রুপে কথা বলতে হলে আগে চ্যানেল জয়েন করো!",
+            reply_markup=markup
+        )
         await asyncio.sleep(10)
         await context.bot.delete_message(update.effective_chat.id, w.message_id)
     except Exception as e:
@@ -42,9 +55,9 @@ def run_flask():
 if __name__ == '__main__':
     threading.Thread(target=run_flask, daemon=True).start()
     if not TOKEN:
-        print("ERROR: BOT_TOKEN is missing in Environment!")
+        print("ERROR: BOT_TOKEN is missing in Env")
         while True: pass
     application = Application.builder().token(TOKEN).build()
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check))
+    application.add_handler(MessageHandler(filters.ALL & ~filters.StatusUpdate.ALL, check))
     print("Bot Started... Polling")
     application.run_polling()
