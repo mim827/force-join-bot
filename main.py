@@ -1,38 +1,60 @@
-import os
+ import os
+import asyncio
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_USERNAME = os.getenv("CHANNEL", "@MIM9614")
-CHANNEL_LINK = f"https://t.me/{CHANNEL_USERNAME.replace('@','')}"
+CHANNEL = os.getenv("CHANNEL", "@MIM9614")
+LINK = f"https://t.me/{CHANNEL.replace('@','')}"
 
-async def check_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.chat.type not in ["group", "supergroup"]:
+async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.from_user:
         return
+
+    # Admin হলে ইগনোর
     try:
-        user_id = update.message.from_user.id
-        member = await context.bot.get_chat_member(CHANNEL_USERNAME, user_id)
-        if member.status in ['left', 'kicked']:
-            raise Exception("Not Joined")
+        cm = await context.bot.get_chat_member(update.effective_chat.id, update.effective_user.id)
+        if cm.status in ['administrator', 'creator']:
+            return
     except:
-        try:
-            await update.message.delete()
-        except:
-            pass
-        keyboard = [[InlineKeyboardButton("✅ Join Channel", url=CHANNEL_LINK)]]
-        await update.message.reply_text(
-            f"⚠️ গ্রুপে কথা বলতে হলে আগে চ্যানেল জয়েন করো!",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+        pass
+
+    # জয়েন চেক
+    try:
+        m = await context.bot.get_chat_member(CHANNEL, update.effective_user.id)
+        if m.status not in ['left', 'kicked']:
+            return
+    except:
+        pass
+
+    # ইউজারের মেসেজ ডিলেট
+    try:
+        await update.message.delete()
+    except:
+        pass
+
+    # ওয়ার্নিং পাঠাও
+    try:
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("✅ Join Channel", url=LINK)]])
+        sent = await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"⚠️ {update.effective_user.first_name} গ্রুপে কথা বলতে হলে আগে {CHANNEL} জয়েন করো! (10s)",
+            reply_markup=keyboard
         )
+        # 10 সেকেন্ড পর ওয়ার্নিং ডিলেট
+        await asyncio.sleep(10)
+        await sent.delete()
+    except Exception as e:
+        print(f"Error: {e}")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"Bot চালু আছে!")
+    await update.message.reply_text("Bot Active!")
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_join))
-    print("Bot Started...")
+    app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, check))
+    print("Bot Started")
     app.run_polling()
 
 if __name__ == "__main__":
