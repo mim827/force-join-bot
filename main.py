@@ -1,4 +1,4 @@
- import os
+import os
 import asyncio
 from flask import Flask
 from telegram import Update
@@ -19,35 +19,27 @@ async def check_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     if update.message.from_user.is_bot:
         return
-    
     user_id = update.effective_user.id
-    
-    # Admin/Owner skip
     try:
         member = await context.bot.get_chat_member(update.effective_chat.id, user_id)
         if member.status in ['administrator', 'creator']:
             return
     except:
         pass
-
-    # Check channel join
     try:
         ch_member = await context.bot.get_chat_member(CHANNEL_USERNAME, user_id)
         if ch_member.status in ['member', 'administrator', 'creator']:
             return
     except:
         pass
-    
-    # Not joined -> delete + warn
     try:
         await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=update.message.message_id)
     except:
         pass
-    
     try:
         warn = await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=f"⚠️ {update.effective_user.mention_html()} আপনাকে প্রথমে চ্যানেলে জয়েন করতে হবে!\n\n👉 {CHANNEL_USERNAME} \n\nজয়েন করে আবার মেসেজ দিন।",
+            text=f"⚠️ {update.effective_user.mention_html()} আপনাকে প্রথমে চ্যানেলে জয়েন করতে হবে!\n\n👉 {CHANNEL_USERNAME}\n\nজয়েন করে আবার মেসেজ দিন।",
             parse_mode="HTML"
         )
         await asyncio.sleep(10)
