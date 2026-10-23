@@ -5,8 +5,9 @@ from telegram.ext import Application, MessageHandler, ContextTypes, filters
 
 app = Flask(__name__)
 TOKEN = os.environ.get("BOT_TOKEN")
-CH = "@MIM9614"  # তোমার চ্যানেল
-CHANNEL_LINK = "https://t.me/MIM9614"
+CH = "@BRA_ERS,@Dhaka83"
+CHANNELS = ["@BRA_ERS", "@Dhaka83"]
+LINKS = ["https://t.me/BRA_ERS", "https://t.me/Dhaka83"]
 
 def home():
     return "Bot is Live!"
