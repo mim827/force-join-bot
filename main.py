@@ -6,13 +6,12 @@ from telegram.ext import Application, MessageHandler, filters, ContextTypes
 app = Flask(__name__)
 TOKEN = os.environ.get("BOT_TOKEN")
 
-# শুধু তোমার একটা চ্যানেল
 CHANNELS = ["@MIM2746"]
 LINKS = ["https://t.me/MIM2746"]
 
 @app.route('/')
 def home():
-    return "Bot is Live! 24H Running"
+    return "Bot is Live! 24H"
 
 async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or update.message.from_user.is_bot:
@@ -22,7 +21,6 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     username = f"@{user.username}" if user.username else user.first_name
 
-    # এডমিন হলে কিছু করবে না
     try:
         m = await context.bot.get_chat_member(update.effective_chat.id, uid)
         if m.status in ['administrator', 'creator']:
@@ -30,7 +28,6 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except:
         pass
 
-    # চ্যানেলে জয়েন চেক
     try:
         for ch in CHANNELS:
             cm = await context.bot.get_chat_member(ch, uid)
@@ -45,11 +42,18 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
             
-        await context.bot.send_message(
+        sent = await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=text,
             reply_markup=InlineKeyboardMarkup(buttons)
         )
+        
+        # ১৫ সেকেন্ড পর অটো ডিলিট
+        await asyncio.sleep(15)
+        try:
+            await sent.delete()
+        except:
+            pass
         return
 
 def run_flask():
@@ -61,7 +65,7 @@ async def main_bot():
     await application.initialize()
     await application.start()
     await application.updater.start_polling()
-    print("Bot Started - 24H")
+    print("Bot Started - 24H + 15s Auto Delete")
     await asyncio.Event().wait()
 
 if __name__ == '__main__':
