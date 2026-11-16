@@ -6,8 +6,8 @@ from telegram.ext import Application, MessageHandler, filters, ContextTypes
 app = Flask(__name__)
 TOKEN = os.environ.get("BOT_TOKEN")
 
-CHANNELS = ["@virallink72882"]
-LINKS = ["https://t.me/virallink72882"]
+CHANNELS = ["@mim1037"]
+LINKS = ["https://t.me/mim1037"]
 
 @app.route('/')
 def home():
